@@ -1,4 +1,4 @@
-package server
+package sqllite
 
 import (
 	"gin-raft-example/common"
@@ -10,7 +10,7 @@ import (
 	"time"
 )
 
-func (h *HttpService)NewRaftNode(opts *common.Options, cache *Cache) error {
+func (h *HttpService)NewRaftNode(opts *common.Options, database *DataBase) error {
 	raftConfig := raft.DefaultConfig()
 	raftConfig.LocalID = raft.ServerID(opts.RaftTCPAddress)
 	raftConfig.SnapshotInterval = 20 * time.Second
@@ -28,7 +28,7 @@ func (h *HttpService)NewRaftNode(opts *common.Options, cache *Cache) error {
 		return  err
 	}
 	fsm := &FSM{
-		Cache: cache,
+		DataBases: database,
 	}
 	snapshotStore, err := raft.NewFileSnapshotStore(opts.DataDir, 1, os.Stderr)
 	if err != nil {
@@ -50,7 +50,7 @@ func (h *HttpService)NewRaftNode(opts *common.Options, cache *Cache) error {
 	}
 	h.raft = ra
 	h.fsm = fsm
-    if opts.Bootstrap{
+	if opts.Bootstrap{
 		configuration := raft.Configuration{
 			Servers: []raft.Server{
 				{

@@ -1,4 +1,4 @@
-package server
+package sqllite
 
 import (
 	"encoding/json"
@@ -10,56 +10,51 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 	"time"
 )
 
 type HttpService struct {
-	Options *common.Options
-	Cache   *Cache
-	raft    *raft.Raft
-	fsm     *FSM
+	Options        *common.Options
+	DataBases      *DataBase
+	raft           *raft.Raft
+	fsm            *FSM
 	LeaderNotifyCh chan bool
 }
 
-func NewHttpService(h *HttpService) *HttpService {
+func NewHttpServiceSql(h *HttpService) *HttpService {
 	return h
 }
 
-
-func (h *HttpService) Get(c *gin.Context) {
-	key := c.Query("key")
-	if key == "" {
-		log.Println("doGet() error, get nil key")
-		c.String(200, "null")
+func (h *HttpService) Sql(c *gin.Context) {
+	sql := c.Query("sql")
+	if len(sql)<1{
 		return
 	}
-	log.Println("Key == ", )
-	log.Println("Value == ", h.Cache.Get(key))
-	c.String(200, h.Cache.Get(key))
-}
+	sql = strings.Trim(strings.ToLower(sql), " ")
+	if strings.HasPrefix(sql, "update") || strings.HasPrefix(sql, "delete") || strings.HasPrefix(sql, "create")  || strings.HasPrefix(sql, "insert") {
+        logId :=h.DataBases.AddId()
+		event := logEntryData{Sql: sql,LogId: logId}
+		eventBytes, err := json.Marshal(event)
+		if err != nil {
+			c.String(200, err.Error())
+			return
+		}
 
-func (h *HttpService) Set(c *gin.Context) {
-	key := c.Query("key")
-	value := c.Query("value")
-	if key == "" || value == "" {
-		c.String(200, "null")
+		applyFuture := h.raft.Apply(eventBytes, 5*time.Second)
+		if err := applyFuture.Error(); err != nil {
+			fmt.Println(err)
+			c.String(200, err.Error())
+			return
+		}
+		c.String(200, "ok")
 		return
+	} else {
+		table := h.DataBases.Query(sql)
+		jsonStr, err := json.Marshal(table)
+		fmt.Println(err)
+		c.String(200, string(jsonStr))
 	}
-
-	event := logEntryData{Key: key, Value: value}
-	eventBytes, err := json.Marshal(event)
-	if err != nil {
-		c.String(200, "null")
-		return
-	}
-
-	applyFuture := h.raft.Apply(eventBytes, 5*time.Second)
-	if err := applyFuture.Error(); err != nil {
-		c.String(200, err.Error())
-		return
-	}
-	c.String(200, "ok")
-	return
 }
 
 func (h *HttpService) Join(c *gin.Context) {
@@ -79,7 +74,7 @@ func (h *HttpService) Join(c *gin.Context) {
 	return
 }
 
-func JoinRaftCluster(opts *common.Options) error {
+func JoinRaftClustersql(opts *common.Options) error {
 	url := fmt.Sprintf("http://%s/join?peerAddress=%s", opts.JoinAddress, opts.RaftTCPAddress)
 
 	resp, err := http.Get(url)

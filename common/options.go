@@ -1,4 +1,4 @@
-package server
+package common
 
 import (
 	"flag"
@@ -11,6 +11,7 @@ type Options struct {
 	Bootstrap      bool   // start as master or not
 	JoinAddress    string // peer address to join
 }
+
 func NewOptions() *Options {
 	opts := &Options{}
 	var httpAddress = flag.String("http", "6000", "Http address")

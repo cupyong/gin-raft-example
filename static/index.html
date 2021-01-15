@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+</head>
+<script>
+    function sql(){
+        let baseUrl = "/test"
+        let url = document.getElementById("url").value
+        let sql = document.getElementById("sql").value
+        baseUrl = baseUrl + "?url=" + url + "&sql=" + sql
+        fetch(baseUrl).then(function (response) {
+            response.json().then(function (jsonObject) {
+                document.getElementById("result").innerHTML = jsonObject.data
+            })
+        }).catch(function (err) {
+            console.log("Fetch错误:" + err);
+        })
+    }
+</script>
+<body>
+url:<input type="text" id="url" style="width: 300px">
+<br/>
+<br/>
+sql:<input type="sql" id="sql" style="width: 600px">
+<br/>
+<br/>
+result:
+<div id="result">
+
+</div>
+<button onclick="sql()">执行</button>
+</body>
+</html>

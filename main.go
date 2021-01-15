@@ -1,14 +1,16 @@
 package main
 
 import (
-	"github.com/gin-gonic/gin"
+	"gin-raft-example/common"
 	"gin-raft-example/server"
+	_ "gin-raft-example/server/common"
+	"github.com/gin-gonic/gin"
 	"log"
 )
 
 func main() {
-	opts := &server.Options{}
-	opts = server.NewOptions()
+	opts := &common.Options{}
+	opts = common.NewOptions()
 	cache := server.NewCache()
 
 	r := gin.Default()

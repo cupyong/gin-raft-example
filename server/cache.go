@@ -1,9 +1,10 @@
 package server
 
 import (
-	"sync"
 	"encoding/json"
+	"fmt"
 	"io"
+	"sync"
 )
 
 type Cache struct {
@@ -44,10 +45,9 @@ func (c *Cache) UnMarshal(serialized io.ReadCloser) error {
 	if err := json.NewDecoder(serialized).Decode(&newData); err != nil {
 		return err
 	}
-
 	c.Lock()
+	fmt.Println(newData)
 	defer c.Unlock()
 	c.data = newData
-
 	return nil
 }
